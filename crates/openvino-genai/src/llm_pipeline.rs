@@ -84,14 +84,7 @@ impl LlmPipeline {
         draft_path: &str,
         draft_device: &str,
     ) -> std::result::Result<Self, SetupError> {
-        Self::with_draft_and_properties(
-            main_path,
-            main_device,
-            &[],
-            draft_path,
-            draft_device,
-            &[],
-        )
+        Self::with_draft_and_properties(main_path, main_device, &[], draft_path, draft_device, &[])
     }
 
     /// Same as [`with_draft`](Self::with_draft) but with device properties for each model.

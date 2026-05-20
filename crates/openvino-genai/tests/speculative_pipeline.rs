@@ -97,5 +97,8 @@ fn test_sd_perf_metrics() {
     // tokens were produced.
     let _ttft = metrics.main_model_metrics().ttft().unwrap();
     let _tpot = metrics.main_model_metrics().tpot().unwrap();
-    let _draft_generated = metrics.draft_model_metrics().num_generated_tokens().unwrap();
+    let _draft_generated = metrics
+        .draft_model_metrics()
+        .num_generated_tokens()
+        .unwrap();
 }

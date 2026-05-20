@@ -8,8 +8,8 @@ use openvino_genai_sys::{
     ov_genai_generation_config_set_assistant_confidence_threshold,
     ov_genai_generation_config_set_do_sample, ov_genai_generation_config_set_frequency_penalty,
     ov_genai_generation_config_set_max_length, ov_genai_generation_config_set_max_new_tokens,
-    ov_genai_generation_config_set_num_assistant_tokens,
-    ov_genai_generation_config_set_num_beams, ov_genai_generation_config_set_presence_penalty,
+    ov_genai_generation_config_set_num_assistant_tokens, ov_genai_generation_config_set_num_beams,
+    ov_genai_generation_config_set_presence_penalty,
     ov_genai_generation_config_set_repetition_penalty, ov_genai_generation_config_set_rng_seed,
     ov_genai_generation_config_set_temperature, ov_genai_generation_config_set_top_k,
     ov_genai_generation_config_set_top_p, ov_genai_generation_config_validate,
@@ -111,7 +111,7 @@ impl GenerationConfig {
     /// Set the number of candidate tokens the draft (assistant) model should produce per
     /// iteration when running speculative decoding.
     ///
-    /// Used together with [`crate::SpeculativeLlmPipeline`]. With the stateful backend, the
+    /// Used together with an [`LlmPipeline`](crate::LlmPipeline) constructed via `with_draft`. With the stateful backend, the
     /// runtime treats this as an initial value and adjusts it based on the recent acceptance
     /// rate; with the continuous-batching backend it is used as-is. If unset, OpenVINO GenAI
     /// defaults it to `5`.
@@ -125,9 +125,7 @@ impl GenerationConfig {
     /// by the main model. Only honored by the continuous-batching backend for speculative
     /// decoding. Mutually exclusive with `num_assistant_tokens` as a strategy selector.
     pub fn set_assistant_confidence_threshold(&mut self, value: f32) -> Result<()> {
-        try_unsafe!(ov_genai_generation_config_set_assistant_confidence_threshold(
-            self.ptr, value
-        ))
+        try_unsafe!(ov_genai_generation_config_set_assistant_confidence_threshold(self.ptr, value))
     }
 
     /// Get the maximum number of tokens to generate.

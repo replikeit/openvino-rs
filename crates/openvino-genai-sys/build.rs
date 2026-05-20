@@ -85,10 +85,7 @@ fn main() {
     // statically into the crate and calls C++ symbols from `libopenvino_genai`, which is
     // already required by the dynamic-linking branch above. We skip it under runtime-linking
     // — the `compile_error!` in `src/sd.rs` will surface the conflict at compile time.
-    #[cfg(all(
-        feature = "speculative-decoding",
-        not(feature = "runtime-linking")
-    ))]
+    #[cfg(all(feature = "speculative-decoding", not(feature = "runtime-linking")))]
     compile_speculative_decoding_shim(&library_search_paths);
 }
 
