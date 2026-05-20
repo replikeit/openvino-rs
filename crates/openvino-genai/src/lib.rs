@@ -31,7 +31,7 @@ mod json_container;
 mod llm_pipeline;
 mod perf_metrics;
 #[cfg(feature = "speculative-decoding")]
-mod speculative_pipeline;
+mod sd_perf_metrics;
 mod streamer;
 mod util;
 mod vlm_pipeline;
@@ -64,10 +64,7 @@ pub use json_container::JsonContainer;
 pub use llm_pipeline::LlmPipeline;
 pub use perf_metrics::PerfMetrics;
 #[cfg(feature = "speculative-decoding")]
-pub use speculative_pipeline::{
-    SdModelMetrics, SdPerfMetrics, SpeculativeDecodedResults, SpeculativeGenerationConfig,
-    SpeculativeLlmPipeline, SpeculativeLlmPipelineBuilder,
-};
+pub use sd_perf_metrics::{SdModelMetrics, SdPerfMetrics};
 pub use streamer::{Streamer, StreamingStatus};
 pub use vlm_pipeline::{VlmDecodedResults, VlmPipeline};
 pub use whisper_generation_config::WhisperGenerationConfig;

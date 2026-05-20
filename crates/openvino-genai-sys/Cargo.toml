@@ -28,7 +28,7 @@ openvino-sys = { workspace = true }
 [build-dependencies]
 openvino-finder = { workspace = true }
 env_logger = { workspace = true }
-cc = { version = "1", optional = true }
+cc = { workspace = true, optional = true }
 
 [features]
 # Linking features: `build.rs` will default to dynamic linking if none is selected.
@@ -41,8 +41,6 @@ runtime-linking = ["libloading", "openvino-sys/runtime-linking"]
 #   because the shim is linked statically into this crate but calls C++ symbols
 #   from `libopenvino_genai`, which must be available at link time.
 speculative-decoding = ["dep:cc", "dynamic-linking"]
-
-default = ["speculative-decoding"]
 
 [package.metadata.docs.rs]
 features = ["runtime-linking"]

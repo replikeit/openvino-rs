@@ -1,25 +1,23 @@
-//! Integration tests for the speculative-decoding pipeline.
+//! Integration tests for the speculative-decoding (draft-model) LLM pipeline.
 //!
 //! These tests reuse the `qwen3` fixture as both the main and draft model. This produces no
-//! actual inference speedup (same model on both sides) but is sufficient to verify the
-//! end-to-end plumbing: pipeline construction, generation, generation-config setters, and
-//! perf-metrics extraction. For benchmarking speedup, swap in a smaller draft model.
+//! actual inference speedup (same model on both sides) but verifies the end-to-end plumbing:
+//! pipeline construction with a draft, generation, the speculative-decoding generation-config
+//! fields, and perf-metrics extraction. For benchmarking real speedup, swap in a smaller
+//! draft model.
 
 #![cfg(feature = "speculative-decoding")]
 
 mod fixtures;
 
 use fixtures::qwen3 as fixture;
-use openvino_genai::{SpeculativeGenerationConfig, SpeculativeLlmPipeline};
+use openvino_genai::{GenerationConfig, LlmPipeline};
 
-fn try_pipeline() -> Option<SpeculativeLlmPipeline> {
+fn try_pipeline() -> Option<LlmPipeline> {
     let model_dir = fixture::model_dir();
     let model_path = model_dir.to_string_lossy().into_owned();
 
-    let result = SpeculativeLlmPipeline::builder(&model_path, "CPU")
-        .draft(&model_path, "CPU")
-        .build();
-    match result {
+    match LlmPipeline::with_draft(&model_path, "CPU", &model_path, "CPU") {
         Ok(p) => Some(p),
         Err(e) => {
             eprintln!("Skipping speculative pipeline tests: failed to create pipeline: {e}");
@@ -43,10 +41,7 @@ fn test_generate_with_draft_model() {
         None => return,
     };
 
-    // num_assistant_tokens must be set explicitly for the stateful backend even though the
-    // C++ docs claim a default of 5 — the pipeline validates against the field's actual value
-    // (which is 0 unless we set it) before falling back to the default in some code paths.
-    let mut config = SpeculativeGenerationConfig::new().unwrap();
+    let mut config = GenerationConfig::new().unwrap();
     config.set_max_new_tokens(8).unwrap();
     config.set_num_assistant_tokens(4).unwrap();
 
@@ -62,11 +57,10 @@ fn test_generation_config_assistant_tokens() {
         None => return,
     };
 
-    let mut config = SpeculativeGenerationConfig::new().unwrap();
+    let mut config = GenerationConfig::new().unwrap();
     config.set_max_new_tokens(8).unwrap();
     config.set_num_assistant_tokens(4).unwrap();
 
-    // The pipeline accepts the config without errors; the draft strategy is active.
     pipeline.generate("Hello", Some(&config), None).unwrap();
 }
 
@@ -77,7 +71,7 @@ fn test_sd_perf_metrics() {
         None => return,
     };
 
-    let mut config = SpeculativeGenerationConfig::new().unwrap();
+    let mut config = GenerationConfig::new().unwrap();
     config.set_max_new_tokens(16).unwrap();
     config.set_num_assistant_tokens(4).unwrap();
 
@@ -86,12 +80,12 @@ fn test_sd_perf_metrics() {
         .unwrap();
 
     let metrics = results
-        .get_sd_perf_metrics()
+        .sd_perf_metrics()
         .unwrap()
-        .expect("speculative pipeline must produce SDPerModelsPerfMetrics");
+        .expect("pipeline built via with_draft must produce SD perf metrics");
 
-    // num_accepted_tokens is a usize, so this checks the getter doesn't error; the value may
-    // legitimately be 0 if the draft and main never agree on a prefix.
+    // num_accepted_tokens is a usize getter; value may legitimately be 0 if the draft and main
+    // never agree on a prefix. Just verify the call succeeds.
     let _accepted = metrics.num_accepted_tokens().unwrap();
     let main_generated = metrics.main_model_metrics().num_generated_tokens().unwrap();
     assert!(

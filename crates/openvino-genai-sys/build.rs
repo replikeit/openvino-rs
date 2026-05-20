@@ -93,18 +93,19 @@ fn main() {
 }
 
 /// Walk up from any of the candidate library directories looking for an OpenVINO include
-/// tree (identified by the presence of `openvino/c/ov_common.h`). Falls back to the
-/// `OpenVINO_DIR` / `OPENVINO_GENAI_DIR` env vars to support custom install layouts.
+/// tree that contains both the C-API header (`openvino/c/ov_common.h`) and the C++ GenAI
+/// header the shim actually `#include`s (`openvino/genai/llm_pipeline.hpp`). Falls back to
+/// the `OpenVINO_DIR` / `OPENVINO_GENAI_DIR` env vars to support custom install layouts.
 #[cfg(all(feature = "speculative-decoding", not(feature = "runtime-linking")))]
 fn find_openvino_include_dir(library_search_paths: &[PathBuf]) -> Option<PathBuf> {
     fn probe(root: &Path) -> Option<PathBuf> {
-        let include = root.join("include");
-        if include.join("openvino/c/ov_common.h").is_file() {
-            return Some(include);
-        }
-        let runtime = root.join("runtime/include");
-        if runtime.join("openvino/c/ov_common.h").is_file() {
-            return Some(runtime);
+        for candidate in ["include", "runtime/include"] {
+            let inc = root.join(candidate);
+            if inc.join("openvino/c/ov_common.h").is_file()
+                && inc.join("openvino/genai/llm_pipeline.hpp").is_file()
+            {
+                return Some(inc);
+            }
         }
         None
     }
@@ -135,30 +136,17 @@ fn find_openvino_include_dir(library_search_paths: &[PathBuf]) -> Option<PathBuf
 fn compile_speculative_decoding_shim(library_search_paths: &[PathBuf]) {
     let include_dir = find_openvino_include_dir(library_search_paths).unwrap_or_else(|| {
         panic!(
-            "Cannot locate OpenVINO headers (looked for `include/openvino/c/ov_common.h`). \
-             Set `OPENVINO_GENAI_DIR` to the OpenVINO GenAI install root, or disable the \
-             `speculative-decoding` feature."
+            "Cannot locate OpenVINO C++ headers (looked for `openvino/genai/llm_pipeline.hpp` \
+             alongside `openvino/c/ov_common.h`). Set `OPENVINO_GENAI_DIR` to the OpenVINO \
+             GenAI install root, or disable the `speculative-decoding` feature."
         )
     });
 
-    let mut build = cc::Build::new();
-    build
+    cc::Build::new()
         .cpp(true)
         .std("c++17")
         .file("shim/sd_pipeline.cpp")
-        .include(&include_dir);
-    // Some installs split the C and core OpenVINO headers across two trees; if a sibling
-    // include exists, add it too.
-    let parent = include_dir
-        .parent()
-        .map(|p| p.join("include"))
-        .filter(|p| p.is_dir());
-    if let Some(p) = parent {
-        if p != include_dir {
-            build.include(p);
-        }
-    }
-    build
+        .include(&include_dir)
         .flag_if_supported("-fexceptions")
         .flag_if_supported("-frtti")
         .compile("ov_genai_sd_shim");

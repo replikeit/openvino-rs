@@ -24,7 +24,5 @@ anyhow = "1.0"
 runtime-linking = ["openvino-genai-sys/runtime-linking"]
 speculative-decoding = ["openvino-genai-sys/speculative-decoding"]
 
-default = ["speculative-decoding"]
-
 [package.metadata.docs.rs]
 features = ["runtime-linking"]
