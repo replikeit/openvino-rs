@@ -25,4 +25,5 @@ runtime-linking = ["openvino-genai-sys/runtime-linking"]
 speculative-decoding = ["openvino-genai-sys/speculative-decoding"]
 
 [package.metadata.docs.rs]
+no-default-features = true
 features = ["runtime-linking"]

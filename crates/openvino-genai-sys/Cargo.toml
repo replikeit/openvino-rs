@@ -16,6 +16,7 @@ include = [
     "/README.md",
     "/build.rs",
     "/src",
+    "/shim",
     "/upstream/src/c/include",
 ]
 links = "openvino_genai_c_api"
@@ -43,4 +44,5 @@ runtime-linking = ["libloading", "openvino-sys/runtime-linking"]
 speculative-decoding = ["dep:cc", "dynamic-linking"]
 
 [package.metadata.docs.rs]
+no-default-features = true
 features = ["runtime-linking"]
