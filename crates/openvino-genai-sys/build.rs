@@ -147,6 +147,18 @@ fn compile_speculative_decoding_shim(library_search_paths: &[PathBuf]) {
         .flag_if_supported("-fexceptions")
         .flag_if_supported("-frtti")
         .compile("ov_genai_sd_shim");
+
+    // The shim instantiates `ov::AnyMap` to build the property bag for `LLMPipeline`. That
+    // emits a vtable for `ov::Any::Impl<std::string>` whose base virtuals (`as_runtime_attribute`,
+    // `is_copyable`, `init`, `merge`, `to_string`, `visit_attributes`, plus `typeinfo for
+    // ov::Any::Base`) live in `libopenvino.so` — not `libopenvino_genai.so`. Emit the link
+    // directive *after* `cc::Build::compile` so it lands on the linker command line *after*
+    // `libov_genai_sd_shim.a`, allowing the static archive's undefined refs to resolve.
+    //
+    // `openvino-sys` already links `libopenvino`, but its directives are emitted earlier in
+    // the link order (because this crate depends on it), so the references coming out of our
+    // static archive would otherwise stay unresolved under linkers that don't re-scan.
+    println!("cargo:rustc-link-lib=dylib=openvino");
 }
 
 /// Enumerate the possible linking states for this build script:
