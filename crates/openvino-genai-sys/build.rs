@@ -84,9 +84,14 @@ fn main() {
     // Compile the speculative-decoding shim when the feature is enabled. The shim links
     // statically into the crate and calls C++ symbols from `libopenvino_genai`, which is
     // already required by the dynamic-linking branch above. We skip it under runtime-linking
-    // — the `compile_error!` in `src/sd.rs` will surface the conflict at compile time.
+    // — the `compile_error!` in `src/sd.rs` will surface the conflict at compile time. We also
+    // skip it when linking is disabled (`OPENVINO_SKIP_LINKING`, e.g. doc builds): compiling
+    // the shim needs the C++ headers and emits a link directive, neither of which is wanted
+    // when the caller has opted out of linking.
     #[cfg(all(feature = "speculative-decoding", not(feature = "runtime-linking")))]
-    compile_speculative_decoding_shim(&library_search_paths);
+    if linking == Linking::Dynamic {
+        compile_speculative_decoding_shim(&library_search_paths);
+    }
 }
 
 /// Walk up from any of the candidate library directories looking for an OpenVINO include

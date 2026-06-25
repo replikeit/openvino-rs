@@ -7,6 +7,7 @@
 
 use crate::{drop_using_function, try_unsafe, util::Result};
 use openvino_genai_sys as sys;
+use std::os::raw::c_int;
 
 /// Speculative-decoding performance metrics for both the main and draft model, plus the
 /// number of tokens accepted from the draft.
@@ -51,7 +52,7 @@ impl SdPerfMetrics {
 /// Borrowed view onto one side (main or draft) of an [`SdPerfMetrics`].
 pub struct SdModelMetrics<'a> {
     parent: &'a SdPerfMetrics,
-    side: i32,
+    side: c_int,
 }
 
 impl SdModelMetrics<'_> {
@@ -95,7 +96,7 @@ impl SdModelMetrics<'_> {
         &self,
         f: unsafe extern "C" fn(
             *const sys::ov_genai_sd_perf_metrics,
-            i32,
+            c_int,
             *mut f32,
             *mut f32,
         ) -> sys::ov_status_e,
